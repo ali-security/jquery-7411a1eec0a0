@@ -60,6 +60,70 @@ module( "ajax", {
 		}
 	});
 
+	ajaxTest( "jQuery.ajax() - do not execute js (crossOrigin)", 2, {
+		create: function( options ) {
+			options.crossDomain = true;
+			return jQuery.ajax( url( "data/script.php?header=ecma" ), options );
+		},
+		success: function() {
+			ok( true, "success" );
+		},
+		complete: function() {
+			ok( true, "complete" );
+		}
+	});
+
+	ajaxTest( "jQuery.ajax() - execute js for crossOrigin when dataType option is provided", 3, {
+		create: function( options ) {
+			options.crossDomain = true;
+			options.dataType = "script";
+			return jQuery.ajax( url( "data/script.php?header=ecma" ), options );
+		},
+		success: function() {
+			ok( true, "success" );
+		},
+		complete: function() {
+			ok( true, "complete" );
+		}
+	});
+
+	ajaxTest( "jQuery.ajax() - do not execute js (crossOrigin)", 2, {
+		create: function( options ) {
+			options.crossDomain = true;
+			return jQuery.ajax( url( "data/script.php" ), options );
+		},
+		success: function() {
+			ok( true, "success" );
+		},
+		complete: function() {
+			ok( true, "complete" );
+		}
+	});
+
+	ajaxTest( "jQuery.ajax() - do not execute text/javascript (crossOrigin)", 2, {
+		create: function( options ) {
+			options.crossDomain = true;
+			return jQuery.ajax( url( "data/script.php?header=script" ), options );
+		},
+		success: function() {
+			ok( true, "success" );
+		},
+		complete: function() {
+			ok( true, "complete" );
+		}
+	});
+
+	ajaxTest( "jQuery.ajax() - no script sniffing for detected crossOrigin", 3, {
+		url: "http://example.invalid/data/script.php",
+		beforeSend: function( jqXHR, s ) {
+			strictEqual( s.crossDomain, true, "cross-domain request detected" );
+			strictEqual( s.contents.script, false, "script content-type sniffing disabled" );
+			ok( jQuery.ajaxSettings.contents.script, "global script sniffing left intact" );
+			return false;
+		},
+		error: true
+	});
+
 	ajaxTest( "jQuery.ajax() - success callbacks (late binding)", 8, {
 		setup: addGlobalEvents("ajaxStart ajaxStop ajaxSend ajaxComplete ajaxSuccess"),
 		url: url("data/name.html"),
