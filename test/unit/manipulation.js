@@ -2443,7 +2443,7 @@ asyncTest( "Sanitized HTML doesn't get unsanitized", function() {
 		counter = 0,
 		called = {},
 		inputs = [],
-		assertCount = 12,
+		assertCount = 14,
 		testHtmlString = function( htmlString ) {
 			var div = jQuery("<div></div>");
 
@@ -2480,6 +2480,9 @@ asyncTest( "Sanitized HTML doesn't get unsanitized", function() {
 	testHtmlString( "<noscript/><img src=url404 onerror=xss(10)>" );
 	testHtmlString( "<noembed><noembed/><img src=url404 onerror=xss(11)>" );
 
+	testHtmlString( "<option><style></option></select><img src=url404 onerror=xss(12)></style>" );
+	testHtmlString( "<optgroup><style></optgroup></select><img src=url404 onerror=xss(13)></style>" );
+
 	setTimeout(function() {
 		for ( i = 0; i < counter; i++ ) {
 			ok( !called[ i ], "Insecure code wasn't executed, input: " + inputs[ i ] );
@@ -2514,4 +2517,43 @@ test( "Sanitized HTML: XHTML-style tags are not expanded by DOM manipulation met
 	equal( jQuery( rawTextPayload ).length, 1, "jQuery(html): no element injected from raw text" );
 
 	equal( jQuery("<div></div>").html( textareaPayload ).find("b").length, 0, "html(): no element injected from a textarea" );
+});
+
+test( "Sanitized HTML: option and optgroup markup is not parsed inside a select wrapper", function() {
+
+	expect( 12 );
+
+	var i, tag, rawText, payload, div,
+		tags = [ "option", "optgroup" ];
+
+	for ( i = 0; i < tags.length; i++ ) {
+		tag = tags[ i ];
+		rawText = "</" + tag + "></select><b class='injected'></b>";
+		payload = "<" + tag + "><style>" + rawText + "</style>";
+
+		// Support: IE<=9
+		// IE<=9 drops <option>/<optgroup> outside of a select, so the wrapper is still used there
+		if ( jQuery.support.option === false ) {
+			ok( true, "IE<=9: " + tag + " is wrapped in a select" );
+			ok( true, "IE<=9: " + tag + " is wrapped in a select" );
+			ok( true, "IE<=9: " + tag + " is wrapped in a select" );
+			ok( true, "IE<=9: " + tag + " is wrapped in a select" );
+			ok( true, "IE<=9: " + tag + " is wrapped in a select" );
+			ok( true, "IE<=9: " + tag + " is wrapped in a select" );
+			continue;
+		}
+
+		div = jQuery("<div></div>").html( payload );
+		equal( div.find("b").length, 0, "html(): no element injected from " + tag + " raw text" );
+		equal( div.find( tag + " > style" ).text(), rawText, "html(): raw text stays inside the " + tag + " style element" );
+
+		div = jQuery("<div></div>").append( payload );
+		equal( div.find("b").length, 0, "append(): no element injected from " + tag + " raw text" );
+		equal( div.find( tag + " > style" ).text(), rawText, "append(): raw text stays inside the " + tag + " style element" );
+
+		equal( jQuery( "<" + tag + ">a</" + tag + "><input>" ).length, 2,
+			"jQuery(html): " + tag + " is parsed in the same context as the following markup" );
+		equal( jQuery("<div></div>").html( "<" + tag + ">a</" + tag + "><input>" ).children().length, 2,
+			"html(): " + tag + " is parsed in the same context as the following markup" );
+	}
 });
